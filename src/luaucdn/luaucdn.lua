@@ -2,8 +2,6 @@ local luaucdn = {
   
 }
 
-local ucdnDB = require( "luaucdn.ucdn_db" )
-
 luaucdn.UCDN_EAST_ASIAN_F = 0
 luaucdn.UCDN_EAST_ASIAN_H = 1
 luaucdn.UCDN_EAST_ASIAN_W = 2
@@ -256,6 +254,49 @@ luaucdn.UCDN_BIDI_CLASS_PDI = 22
 luaucdn.UCDN_BIDI_PAIRED_BRACKET_TYPE_OPEN = 0
 luaucdn.UCDN_BIDI_PAIRED_BRACKET_TYPE_CLOSE = 1
 luaucdn.UCDN_BIDI_PAIRED_BRACKET_TYPE_NONE = 2
+
+
+
+local ucdnDB = require( "luaucdn.ucdn_db" )
+
+local bit = require "plugin.bit"
+
+local band = bit.band
+local lshift, rshift = bit.lshift, bit.rshift
+
+local function get_ucd_record( code )
+    local index, offset;
+
+    if (code >= 0x110000) then
+        index = 0;
+    else
+        index  = lshift( ucdnDB.index0[ rshift( code, ucdnDB.SHIFT1 + ucdnDB.SHIFT2 ) + 1 ], ucdnDB.SHIFT1 );
+        offset = band( rshift( code, ucdnDB.SHIFT2 ), lshift(1, ucdnDB.SHIFT1) - 1 );
+        index  = lshift( ucdnDB.index1[ index + offset + 1 ], ucdnDB.SHIFT2 );
+        offset = band( code, lshift(1, ucdnDB.SHIFT2) - 1 );
+        index  = ucdnDB.index2[ index + offset + 1 ];
+    end
+
+    return ucdnDB.ucd_records[index + 1];
+end
+
+local function get_decomp_record( code )
+    local index, offset;
+
+    if (code >= 0x110000) then
+        index = 0;
+    else
+        index  = lshift( ucdnDB.decomp_index0[ rshift( code, ucdnDB.DECOMP_SHIFT1 + ucdnDB.DECOMP_SHIFT2 ) + 1 ], ucdnDB.DECOMP_SHIFT1 );
+        offset = band( rshift( code, ucdnDB.DECOMP_SHIFT2), ( lshift(1, ucdnDB.DECOMP_SHIFT1) - 1) );
+        index  = lshift( ucdnDB.decomp_index1[index + offset + 1], ucdnDB.DECOMP_SHIFT2 );
+        offset = band( code, lshift( 1, ucdnDB.DECOMP_SHIFT2 ) - 1 );
+        index  = ucdnDB.decomp_index2[index + offset + 1];
+    end
+
+    return ucdnDB.decomp_data[ index + 1 ];
+end
+
+
 
 function luaucdn.get_unicode_version( ... )
   return ucdnDB.UNIDATA_VERSION
