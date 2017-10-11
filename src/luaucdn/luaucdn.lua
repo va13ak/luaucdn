@@ -2,8 +2,6 @@ local luaucdn = {
   
 }
 
-local ucdnDB = require( "luaucdn.ucdn_db" )
-
 luaucdn.UCDN_EAST_ASIAN_F = 0
 luaucdn.UCDN_EAST_ASIAN_H = 1
 luaucdn.UCDN_EAST_ASIAN_W = 2
@@ -257,16 +255,9 @@ luaucdn.UCDN_BIDI_PAIRED_BRACKET_TYPE_OPEN = 0
 luaucdn.UCDN_BIDI_PAIRED_BRACKET_TYPE_CLOSE = 1
 luaucdn.UCDN_BIDI_PAIRED_BRACKET_TYPE_NONE = 2
 
-#include <stdint.h>
-
-#include <lua.h>
-#include <lauxlib.h>
-#include <lualib.h>
-
-int get_unicode_version(lua_State *L) {
-  lua_pushstring(L, ucdn_get_unicode_version());
-  return 1;
-}
+function luaucdn.get_unicode_version( ... )
+  return ucdnDB.UNIDATA_VERSION
+end
 
 int get_bidi_class(lua_State *L) {
   uint32_t c = lua_tointeger(L, 1);
