@@ -2,6 +2,8 @@ local luaucdn = {
   
 }
 
+local ucdnDB = require( "luaucdn.ucdn_db" )
+
 luaucdn.UCDN_EAST_ASIAN_F = 0
 luaucdn.UCDN_EAST_ASIAN_H = 1
 luaucdn.UCDN_EAST_ASIAN_W = 2
