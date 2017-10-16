@@ -277,7 +277,7 @@ local function get_ucd_record( code )
         index  = ucdnDB.index2[ index + offset + 1 ];
     end
 
-    return ucdnDB.ucd_records[index + 1];
+    return ucdnDB.ucd_records[ index + 1 ];
 end
 
 local function get_decomp_record( code )
@@ -288,9 +288,9 @@ local function get_decomp_record( code )
     else
         index  = lshift( ucdnDB.decomp_index0[ rshift( code, ucdnDB.DECOMP_SHIFT1 + ucdnDB.DECOMP_SHIFT2 ) + 1 ], ucdnDB.DECOMP_SHIFT1 );
         offset = band( rshift( code, ucdnDB.DECOMP_SHIFT2), ( lshift(1, ucdnDB.DECOMP_SHIFT1) - 1) );
-        index  = lshift( ucdnDB.decomp_index1[index + offset + 1], ucdnDB.DECOMP_SHIFT2 );
+        index  = lshift( ucdnDB.decomp_index1[ index + offset + 1 ], ucdnDB.DECOMP_SHIFT2 );
         offset = band( code, lshift( 1, ucdnDB.DECOMP_SHIFT2 ) - 1 );
-        index  = ucdnDB.decomp_index2[index + offset + 1];
+        index  = ucdnDB.decomp_index2[ index + offset + 1 ];
     end
 
     return ucdnDB.decomp_data[ index + 1 ];
@@ -302,24 +302,47 @@ function luaucdn.get_unicode_version( ... )
   return ucdnDB.UNIDATA_VERSION
 end
 
-int get_bidi_class(lua_State *L) {
-  uint32_t c = lua_tointeger(L, 1);
-  lua_pushinteger(L, ucdn_get_bidi_class(c));
-  return 1;
-}
+function luaucdn.get_bidi_class( code )
+  return get_ucd_record( code )[ 3 ]
+end
 
-int paired_bracket_type(lua_State *L) {
-  uint32_t c = lua_tointeger(L, 1);
-  lua_pushinteger(L, ucdn_paired_bracket_type(c));
-  return 1;
-}
+-- rewriting only part needed for luabidi
+-- without decoding part
+function luaucdn.compat_decompose( code )
+    local i, len;
+    local rec = get_decomp_record(code);
+    len = rshift( rec[ 1 ], 8 );
 
-int paired_bracket(lua_State *L) {
-  uint32_t c = lua_tointeger(L, 1);
-  lua_pushinteger(L, ucdn_paired_bracket(c));
-  return 1;
-}
+    if (len == 0) then
+        return { 0 };
+    end
+    --[[
+    rec++;
+    for (i = 0; i < len; i++) do
+        decomposed[i] = decode_utf16(&rec);
+    end
+    ]]--
+    return { len };
+end
 
+function luaucdn.paired_bracket_type( code )
+    local pbt = ucdnDB.bracket_pairs[ code ]
+    if pbt then
+        return pbt[ 3 ]
+    else
+        return luaucdn.UCDN_BIDI_PAIRED_BRACKET_TYPE_NONE
+    end
+end
+
+function luaucdn.paired_bracket( code )
+    local pb = ucdnDB.bracket_pairs[ code ]
+    if pb then
+        return pb[ 2 ]
+    else
+        return code
+    end
+end
+--[[
 int compat_decompose(lua_State *L) {
   uint32_t c = lua_tointeger(L, 1);
 
@@ -345,12 +368,6 @@ static const struct luaL_Reg lib_table [] = {
   {"compat_decompose", compat_decompose},
   {NULL, NULL}
 };
-
-int luaopen_luaucdn (lua_State *L) {
-  lua_newtable(L);
-  luaL_setfuncs(L, lib_table,0);
-
-  return 1;
-}
+--]]
 
 return luaucdn
